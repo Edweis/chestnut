@@ -4,7 +4,7 @@ import websockify from 'koa-websocket';
 import fs from 'fs/promises'
 import hbs from 'handlebars'
 import dayjs from 'dayjs'
-
+import sanitizeHtml from 'sanitize-html';
 const app = websockify(new Koa());
 
 class BetterMap extends Map {
@@ -42,7 +42,8 @@ const formater = (viewerId) => (message) => {
           </div>`
 }
 const encode = (userId, content) => {
-  const safeContent = content.trim().replace('\n', '<br/>')
+  let safeContent = content.trim().replace('\n', '<br/>')
+  safeContent = sanitizeHtml(safeContent, {allowedTags: ['br'], allowedAttributes: {}})
   return `[${new Date().toISOString()}|${userId}]${safeContent}`
 }
 
