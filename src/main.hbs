@@ -5,21 +5,84 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://unpkg.com/htmx.org@1.9.11" ></script>
   <script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/ws.js"></script>
-          <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <title>Chestnut</title>
+  <style>
+    #chat {
+      width: 20rem;
+    }
+    #notifications {
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 4px;
+      max-height: 300px;
+      overflow: scroll;
+      padding: 16px 0px;
+    }
+    #notifications div {
+      display: flex;
+      gap: 6px;
+      justify-content: space-between;
+    }
+    #notifications div .content {
+      border: 1px solid black;
+      border-radius: 12px 0px 12px 12px;
+      padding: 6px 8px;
+    }
+    #notifications div.them .content {
+      border-radius: 0px 12px 12px 12px;
+    }
+    #notifications div .date {
+      margin-top: 7px;
+    }
+    #notifications .me {
+    }
+    #notifications .them {
+      flex-flow: row-reverse; 
+    }
+    #notifications .log {
+      justify-content: center;
+      font-style: italic;
+      color: gray;
+    }
+    #notifications .date {
+      font-style: italic;
+      color: gray;
+    }
+
+    #form {
+      display: flex;
+      gap: 4px
+    }
+    #form .paperclip {
+      width: 20px;
+      align-self: flex-end;
+    }
+    #form textarea[name=message] {
+      width: 100%;
+      border-radius: 12px;
+      padding:  6px 8px;
+      resize: none;
+      border: 1px solid black;
+    }
+  </style>
 </head>
-<body x-data="{ name: new URLSearchParams(window.location.search).get('name') }">
+<body x-data="{ name: new URLSearchParams(window.location.search).get('name') || 'FR' }">
   <h1>Chestnut</h1>
   <form method="get">
     <label>name <input name="name" x-model="name"></label>
   </form>
-  <div hx-ext="ws" :ws-connect="'/join/bdk/' + name">
-    <div id="notifications"></div>
-    <div id="chat_room">
-        ...
-    </div>
+  <div id="chat" hx-ext="ws" :ws-connect="'/join/bdk/' + name" hx-on:htmx:ws-after-message="      
+      htmx.find('#form textarea').value='' ; htmx.find('#form textarea').focus();
+      htmx.find('#notifications').scrollTop = htmx.find('#notifications').scrollHeight
+">
+    <div id="notifications"></div> 
     <form id="form" ws-send>
-        <input name="message" autofocus>
+      <div class="paperclip">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-5"> <path fill-rule="evenodd" d="M15.621 4.379a3 3 0 0 0-4.242 0l-7 7a3 3 0 0 0 4.241 4.243h.001l.497-.5a.75.75 0 0 1 1.064 1.057l-.498.501-.002.002a4.5 4.5 0 0 1-6.364-6.364l7-7a4.5 4.5 0 0 1 6.368 6.36l-3.455 3.553A2.625 2.625 0 1 1 9.52 9.52l3.45-3.451a.75.75 0 1 1 1.061 1.06l-3.45 3.451a1.125 1.125 0 0 0 1.587 1.595l3.454-3.553a3 3 0 0 0 0-4.242Z" clip-rule="evenodd" /> </svg>
+      </div>
+      <textarea @keydown.ctrl.enter="$el.nextElementSibling.click()" name="message" autofocus=""true placeholder="Message" rows="1"></textarea>
+      <button>Send</button>
     </form>
 </div>
 </body>

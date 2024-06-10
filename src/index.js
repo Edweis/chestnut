@@ -29,14 +29,21 @@ app.use(async (ctx, next) => {
 
 // helpers
 const CLEAR_CHAT = `<div id="notifications"></div>`
-const format = (message) => {
-  const [, date, name, content] = message.match(/^\[(.*?)\|(.*?)\](.*)$/) || [, , , message]
-  if (!date) return `<div id="notifications" hx-swap-oob="beforeend">
-                      <div>${content}</div>
+const formater = (viewerId) => (message) => {
+  const [, date, userId, content] = message.match(/^\[(.*?)\|(.*?)\](.*)$/) || [, , , message]
+  if (!date) return `<div id="notifications" hx-swap-oob="afterbegin">
+                      <div class="log">${content}</div>
                     </div>`
-  return `<div id="notifications" hx-swap-oob="beforeend">
-            <div>${dayjs(date).format('HH:mm:ss')} - ${name} : ${content}</div>
+  return `<div id="notifications" hx-swap-oob="afterbegin">
+            <div class="${userId===viewerId ? "me" : "them"}">
+              <span class="date">${dayjs(date).format('MMM D[, ]HH:mm')}</span>
+              <span class="content">${userId} : ${content}</span>
+            </div>
           </div>`
+}
+const encode = (userId, content) => {
+  const safeContent = content.trim().replace('\n', '<br/>')
+  return `[${new Date().toISOString()}|${userId}]${safeContent}`
 }
 
 // frontend
@@ -52,27 +59,29 @@ app.ws.use(route.all('/join/:roomId/:userId', async (ctx, roomId, userId) => {
   room.set(userId, ctx.websocket) // joined the room 
   const chatPath = './chats/' + roomId + '.txt'
 
+  // helpers
+  const format = formater(userId)
+
   // Hello everyone
   const history = await fs.readFile(chatPath).catch(() => '(no history)').then(r => r.toString())
   ctx.websocket.send(CLEAR_CHAT)
   history.split('\n').forEach(l => ctx.websocket.send(format(l)))
 
   //Welcome message
-  room.forEach((ws) => ws.send(format(`[|]# ${userId} has joined the chat`)));
+  room.forEach((ws) => ws.send(format(`# ${userId} has joined the chat`)));
 
   // Message sent
   ctx.websocket.on('message', function (message) {
     console.log(message)
     const content = JSON.parse(message).message
-    const formated = `[${new Date().toISOString()}|${userId}]${content}`
-    fs.appendFile(chatPath, formated + '\n')
-    room.forEach((ws) => ws.send(format(formated)))
-    ctx.websocket.send('<form id="form" ws-send > <input autofocus name="message"> </form>')
+    const nextMessage = encode(userId, content)
+    fs.appendFile(chatPath, nextMessage + '\n')
+    room.forEach((ws) => ws.send(format(nextMessage)))
   });
 
   ctx.websocket.on('close', () => {
     room.delete(userId); 
-    room.forEach((ws) => ws.send(format(`[|]# ${userId} left`)))
+    room.forEach((ws) => ws.send(format(`# ${userId} left`)))
   })
 }));
 
