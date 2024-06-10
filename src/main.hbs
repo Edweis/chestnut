@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://unpkg.com/htmx.org@1.9.11" ></script>
+  <script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/ws.js"></script>
+          <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <title>Chestnut</title>
+</head>
+<body x-data="{ name: new URLSearchParams(window.location.search).get('name') }">
+  <h1>Chestnut</h1>
+  <form method="get">
+    <label>name <input name="name" x-model="name"></label>
+  </form>
+  <div hx-ext="ws" :ws-connect="'/join/bdk/' + name">
+    <div id="notifications"></div>
+    <div id="chat_room">
+        ...
+    </div>
+    <form id="form" ws-send>
+        <input name="message" autofocus>
+    </form>
+</div>
+</body>
+</html>
